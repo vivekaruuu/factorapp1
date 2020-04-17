@@ -1,9 +1,12 @@
 package com.example.factorgame;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,6 +25,11 @@ public class MainActivity extends AppCompatActivity {
     int index;
     int number;
     TextView textView;
+    TextView winstr;
+    int winStreak=0;
+    int correct=0;
+    int total=0;
+    SharedPreferences sharedPreferences;
     public void onClickGenerate(View view){
         try {
             textView=findViewById(R.id.textView);
@@ -30,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
             option3.setBackgroundColor(Color.WHITE);
             textView.setText("Select correct factor");
             EditText editText = findViewById(R.id.editText);
+
 
             int value = Integer.parseInt(editText.getText().toString());
             ArrayList<Integer> intArr = new ArrayList<Integer>();
@@ -82,16 +91,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClick(View view){
-        Button button=findViewById(view.getId());
-         textView=findViewById(R.id.textView);
-        if((view.getTag().toString()).equals(String.valueOf(index))) {
-            textView.setText("Correct!");
-            button.setBackgroundColor(Color.GREEN);
-
+        if(option1.getText().toString().equals("")){
+            Toast.makeText(this,"enter a number first",Toast.LENGTH_SHORT).show();
         }
         else {
-            textView.setText("Incorrect,Answer is "+String.valueOf(number));
-            button.setBackgroundColor(Color.RED);
+            final ConstraintLayout constraintLayout = findViewById(R.id.constraint);
+            TextView score = findViewById(R.id.score);
+            winstr = findViewById(R.id.winstr);
+            final EditText editText = findViewById(R.id.editText);
+            Button button = findViewById(view.getId());
+            if ((view.getTag().toString()).equals(String.valueOf(index))) {
+                textView.setText("Correct!");
+                correct++;
+                winStreak++;
+                constraintLayout.setBackgroundColor(Color.GREEN);
+
+            } else {
+                textView.setText("Incorrect,Answer is " + String.valueOf(number));
+                constraintLayout.setBackgroundColor(Color.RED);
+                winStreak = 0;
+            }
+            total++;
+
+            score.setText(String.valueOf(correct) + "/" + String.valueOf(total));
+            if (sharedPreferences.getInt("winstr",0) < winStreak) {
+                winstr.setText("win streak: " + String.valueOf(correct));
+                sharedPreferences.edit().putInt("winstr",winStreak).apply();
+            }
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    constraintLayout.setBackgroundColor(Color.WHITE);
+                    textView.setText("Select correct factor");
+                    editText.setText("");
+                    option1.setText("");
+                    option2.setText("");
+                    option3.setText("");
+
+                }
+            }, 1500);
         }
     }
     public int getRandomWithExclusion(Random rnd, int start, int end, ArrayList<Integer> exclude) {
@@ -109,6 +148,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        winstr = findViewById(R.id.winstr);
+        sharedPreferences=this.getSharedPreferences("com.example.factorgame",MODE_PRIVATE);
+        winstr.setText("Win Streak: "+String.valueOf(sharedPreferences.getInt("winstr",0)));
 
         option1=(Button)findViewById(R.id.option1);
         option2=(Button)findViewById(R.id.option2);
