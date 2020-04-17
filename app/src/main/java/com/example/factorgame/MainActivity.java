@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                     option3.setText("");
 
                 }
-            }, 1500);
+            }, 2000);
         }
     }
     public int getRandomWithExclusion(Random rnd, int start, int end, ArrayList<Integer> exclude) {
