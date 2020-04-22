@@ -14,6 +14,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
@@ -24,15 +26,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MainActivity extends AppCompatActivity {
 
     Button option1;
     Button option2;
     Button option3;
-    int index;
-    int number;
+    long index;
+    long number;
     long millisinFuture=10000;
     Boolean millisFinished=true;
     Boolean interruptedHandler=false;
@@ -46,13 +50,12 @@ public class MainActivity extends AppCompatActivity {
     int correct=0;
     int total=0;
     boolean check;
-    ArrayList<Integer> arrayFinal ;
+    ArrayList<Long> arrayFinal ;
     SharedPreferences sharedPreferences;
     CountDownTimer countDownTimer;
     TextView timer;
     Boolean buttonClick=false;
     Boolean timerActive=false;
-
 
     public void onClickGenerate(View view){
         try {
@@ -63,58 +66,68 @@ public class MainActivity extends AppCompatActivity {
                 textView.setText("Select Correct Factor");
                 editText = findViewById(R.id.editText);
 
-                arrayFinal = new ArrayList<Integer>();
-                int value = Integer.parseInt(editText.getText().toString());
-                if (value > 4) {
-                    ArrayList<Integer> intArr = new ArrayList<Integer>();
-                    for (int k = 1; k <= value / 2; k++) {
-                        if (value % k == 0) {
-                            intArr.add(k);
-
+                arrayFinal = new ArrayList<Long>();
+                long value = Long.parseLong(editText.getText().toString());
+                if(value>Long.MAX_VALUE){
+                    Toast.makeText(this,"excedeeded max limit ,why???",Toast.LENGTH_SHORT);
+                }else {
+                    if (value > 4) {
+                        ArrayList<Long> intArr = new ArrayList<Long>();
+                        for (long k = 1; k < value / k; k++) {
+                            if (value % k == 0) {
+                                intArr.add(k);
+                                intArr.add(value / k);
+                            }
                         }
-                    }
+                        double sq = Math.sqrt(value);
+                        if (sq == Math.floor(sq))
+                            intArr.add((long) sq);
+                        Collections.sort(intArr);
+                        Random random = new Random();
+                        Log.i("msg", intArr.toString());
 
-                    intArr.add(value);
-                    Random random = new Random();
-                    index = random.nextInt(3);
-                    number = intArr.get(random.nextInt(intArr.size()));
+                        index = ThreadLocalRandom.current().nextLong(3);
+                        number = intArr.get(random.nextInt(intArr.size()));
 
-                    for (int k = 0; k < 3; k++) {
-                        if (k == index)
-                            arrayFinal.add(number);
-                        else {
-                            if (k == 1) {
-                                int temp = getRandomWithExclusion(random, 1, value, intArr);
-                                while (temp == arrayFinal.get(0)) {
-                                    temp = getRandomWithExclusion(random, 1, value, intArr);
-                                }
-                                arrayFinal.add(temp);
-                            } else {
-
-                                if (k == 2) {
-                                    int temp = getRandomWithExclusion(random, 1, value, intArr);
-                                    while (temp == arrayFinal.get(0) || temp == arrayFinal.get(1)) {
+                        for (int k = 0; k < 3; k++) {
+                            if (k == index)
+                                arrayFinal.add(number);
+                            else {
+                                if (k == 1) {
+                                    long temp = getRandomWithExclusion(random, 1, value, intArr);
+                                    while (temp == arrayFinal.get(0)) {
                                         temp = getRandomWithExclusion(random, 1, value, intArr);
                                     }
                                     arrayFinal.add(temp);
                                 } else {
-                                    arrayFinal.add(getRandomWithExclusion(random, 1, value, intArr));
+
+                                    if (k == 2) {
+                                        long temp = getRandomWithExclusion(random, 1, value, intArr);
+                                        while (temp == arrayFinal.get(0) || temp == arrayFinal.get(1)) {
+                                            temp = getRandomWithExclusion(random, 1, value, intArr);
+                                        }
+                                        arrayFinal.add(temp);
+                                    } else {
+                                        arrayFinal.add(getRandomWithExclusion(random, 1, value, intArr));
+                                    }
                                 }
                             }
                         }
-                    }
-                    option1.setText((arrayFinal.get(0)).toString());
-                    option2.setText((arrayFinal.get(1)).toString());
-                    option3.setText((arrayFinal.get(2)).toString());
-                    timerfunc();
+                        option1.setText((arrayFinal.get(0)).toString());
+                        option2.setText((arrayFinal.get(1)).toString());
+                        option3.setText((arrayFinal.get(2)).toString());
+                        timerfunc();
 
-                } else {
-                    Toast.makeText(this, "please enter number greater than 4", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "please enter number greater than 4", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
-            Toast.makeText(this,"please enter number first",Toast.LENGTH_SHORT).show();
+            if(e.getMessage().equals("For input string: \"\""))
+                Toast.makeText(this,"please enter number",Toast.LENGTH_SHORT).show();
+            else
+            Toast.makeText(this,"exceeded limit whyyy :(",Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -153,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClick(View view){
-        if(option1.getText().toString().equals("")||buttonClick==true){
+        if(option1.getText().toString().equals("")||buttonClick){
             Toast.makeText(this,"enter a number first",Toast.LENGTH_SHORT).show();
         }
         else {
@@ -212,9 +225,9 @@ public class MainActivity extends AppCompatActivity {
         }, 2000);
     }
 
-    public int getRandomWithExclusion(Random rnd, int start, int end, ArrayList<Integer> exclude) {
-        int random = start + rnd.nextInt(end - start + 1 - exclude.size());
-        for (int ex : exclude) {
+    public long getRandomWithExclusion(Random rnd, long start, long end, ArrayList<Long> exclude) {
+        long random = start + ThreadLocalRandom.current().nextLong(end - start + 1 - exclude.size());
+        for (long ex : exclude) {
             if (random < ex) {
                 break;
             }
@@ -258,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
         }else {
             check=true;
             outState.putBoolean("check",check);
-            outState.putIntegerArrayList("buttonsval", arrayFinal);
+            outState.putSerializable("buttonsval", arrayFinal);
         }
         if(!millisFinished)
             countDownTimer.cancel();
@@ -266,8 +279,8 @@ public class MainActivity extends AppCompatActivity {
         outState.putLong("millisUntilFinished",millisUntilFinished1);
         outState.putInt("total",total);
         outState.putInt("correct",correct);
-        outState.putInt("number",number);
-        outState.putInt("index",index);
+        outState.putLong("number",number);
+        outState.putLong("index",index);
         outState.putBoolean("interruption",interruptedHandler);
 
     }
@@ -276,11 +289,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         check=savedInstanceState.getBoolean("check");
-        arrayFinal= savedInstanceState.getIntegerArrayList("buttonsval");
+        arrayFinal= (ArrayList<Long>)savedInstanceState.getSerializable("buttonsval");
         total=savedInstanceState.getInt("total");
         correct=savedInstanceState.getInt("correct");
-        number=savedInstanceState.getInt("number");
-        index=savedInstanceState.getInt("index");
+        number=savedInstanceState.getLong("number");
+        index=savedInstanceState.getLong("index");
 
         if(check) {
             option1.setText((arrayFinal.get(0)).toString());
@@ -307,4 +320,6 @@ public class MainActivity extends AppCompatActivity {
             timerfunc();
         }
     }
+
+
 }
